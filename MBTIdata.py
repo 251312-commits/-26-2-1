@@ -98,6 +98,16 @@ st.markdown(
         word-break: break-word;
         border-left: 3px solid rgba(255, 255, 255, 0.2);
     }
+    
+    /* 강조용 색상 스타일 */
+    .my-text {
+        color: #ff6b81 !important; /* 내 이름 & 내 MBTI 강조 색상 (분홍/장미색) */
+        font-weight: 700;
+    }
+    .target-text {
+        color: #a5b4fc !important; /* 상대 MBTI 색상 (연보라) */
+        font-weight: 700;
+    }
 </style>
 """,
     unsafe_allow_html=True,
@@ -125,7 +135,6 @@ def load_data_from_gsheets():
 
     data = sheet.get_all_records()
 
-    # user_dict에 MBTI 문자열도 함께 보관하도록 구조 업데이트
     user_dict = {
         str(row["이름"]).strip(): {
             "msg": row["선택"],
@@ -356,6 +365,14 @@ def create_pair_radar_chart(name1, scores1, name2, scores2, score_pct, categorie
     return fig
 
 
+# --- Helper Function for Formatting MBTI ---
+def format_mbti_string(mbti_str):
+    raw = str(mbti_str).upper().strip()
+    if len(raw) >= 5:
+        return f"{raw[:4]}-{raw[4:]}"
+    return raw
+
+
 # --- App Main UI ---
 st.title("성격 유사도 분석")
 st.subheader("벡터를 이용해 Python으로 우리 학교 학생들의 MBTI 기반 성격 유사도 분석")
@@ -378,14 +395,10 @@ else:
     ).strip()
 
     if not input_name:
-        # 이름 입력 전 초기 안내문
         st.info(
             "👆 위 입력창에 본인의 이름을 입력하면 유사도 분석 결과를 확인하실 수 있습니다."
         )
 
-    # ---------------------------------------------------------
-    # 설명창(st.info) 밑으로 이동한 원리 설명 Expander
-    # ---------------------------------------------------------
     with st.expander("📐 **수학/알고리즘 원리 알아보기 (클릭)**"):
         st.markdown(
             """
@@ -493,7 +506,6 @@ else:
                 st.write("")
                 btn_pair = st.button("🎯 1:1 비교 분석하기", use_container_width=True)
 
-            # 버튼을 누르거나 이름을 입력했을 때 처리
             if btn_pair:
                 if not target_friend:
                     st.warning("비교할 친구의 이름을 입력해 주세요!")
@@ -504,7 +516,6 @@ else:
                         f"'{target_friend}' 님의 데이터가 존재하지 않습니다. 정확한 이름으로 입력해주세요."
                     )
                 else:
-                    # 데이터가 정상적으로 존재할 경우 계산 및 출력
                     vec1 = unit_vectors[input_name]["vector"]
                     vec2 = unit_vectors[target_friend]["vector"]
                     pair_score = float(np.dot(vec1, vec2)) * 100
@@ -513,27 +524,28 @@ else:
                     scores2 = unit_vectors[target_friend]["original_scores"]
                     friend_msg = unit_vectors[target_friend]["msg"]
 
-                    # ---------------------------------------------------------
-                    # ✨ 정확한 친구 MBTI 가져오기 및 포맷팅 (예: ENFP-A)
-                    # ---------------------------------------------------------
-                    raw_mbti = unit_vectors[target_friend]["mbti"].upper()
-
-                    if len(raw_mbti) >= 5:
-                        formatted_mbti = f"{raw_mbti[:4]}-{raw_mbti[4:]}"
-                    else:
-                        formatted_mbti = raw_mbti
+                    # ✨ 내 MBTI와 상대방 MBTI 포맷팅
+                    my_mbti = format_mbti_string(unit_vectors[input_name]["mbti"])
+                    target_mbti = format_mbti_string(
+                        unit_vectors[target_friend]["mbti"]
+                    )
 
                     col_info1, col_info2 = st.columns([1, 2])
 
                     with col_info1:
+                        # 내 이름 & 내 MBTI는 Pink계열(.my-text), 상대 정보는 Light Blue계열(.target-text) 적용
                         st.markdown(
                             f"""
                             <div class="friend-card" style="margin-top: 0px; text-align: left;">
-                                <h3 style="color:#ffffff; margin-bottom:10px;">🤝 궁합 분석 결과</h3>
-                                <p style="font-size: 1.1rem; margin-bottom: 2px;"><b>{input_name}</b> & <b>{target_friend}</b></p>
-                                <div style="font-size: 1.5rem; font-weight: 800; color: #a5b4fc; margin-bottom: 12px;">
-                                    {formatted_mbti}
+                                <h3 style="color:#ffffff; margin-bottom:12px;">🤝 궁합 분석 결과</h3>
+                                
+                                <!-- 이름 & MBTI 한 줄 형태로 출력 -->
+                                <div style="font-size: 1.15rem; line-height: 1.6; margin-bottom: 12px;">
+                                    <span class="my-text">{input_name}</span> (<span class="my-text">{my_mbti}</span>) 
+                                    <span style="color:#ffffff;"> & </span> 
+                                    <span>{target_friend}</span> (<span class="target-text">{target_mbti}</span>)
                                 </div>
+                                
                                 <div style="font-size: 2.2rem; font-weight: bold; color: #6366f1; margin: 10px 0;">
                                     {pair_score:.2f}%
                                 </div>
