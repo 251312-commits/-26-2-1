@@ -11,7 +11,6 @@ def load_data_from_gsheets():
     scope = ['https://spreadsheets.google.com/feeds',
              'https://www.googleapis.com/auth/drive']
 
-    # 🚨 수정된 부분: 파일 경로 대신 Streamlit Secrets에서 인증 정보를 가져옵니다.
     credentials_dict = dict(st.secrets["gcp_service_account"])
     credential = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
     gc = gspread.authorize(credential)
@@ -67,28 +66,67 @@ def find(target_name, unit_vectors):
     similarities.sort(key=lambda x: x[1], reverse=True)
     return similarities[:3]
 
-def create_radar_chart(scores, categories, title):
+def create_combined_radar_chart(selected_name, selected_scores, results, categories):
     fig = go.Figure()
+
+    # 본인 및 1, 2, 3위 친구들을 위한 색상 정의 (RGBA 반투명 색상)
+    fill_colors = [
+        'rgba(255, 99, 132, 0.4)',  # 붉은색 (본인)
+        'rgba(54, 162, 235, 0.3)',  # 파란색 (1위)
+        'rgba(75, 192, 192, 0.3)',  # 청록색 (2위)
+        'rgba(255, 206, 86, 0.3)'   # 노란색 (3위)
+    ]
+    line_colors = [
+        'rgb(255, 99, 132)',
+        'rgb(54, 162, 235)',
+        'rgb(75, 192, 192)',
+        'rgb(255, 206, 86)'
+    ]
+
+    # 1. 선택한 본인 데이터 추가 (가장 강조되도록 선 두께를 3으로 설정)
     fig.add_trace(go.Scatterpolar(
-        r=scores,
+        r=selected_scores,
         theta=categories,
         fill='toself',
-        name=title
+        name=f"★ {selected_name} (나)",
+        fillcolor=fill_colors[0],
+        line=dict(color=line_colors[0], width=3),
+        opacity=0.9
     ))
+
+    # 2. 유사한 친구 Top 3 데이터 순차적으로 추가
+    for i, (name, score, _, similar_scores) in enumerate(results):
+        fig.add_trace(go.Scatterpolar(
+            r=similar_scores,
+            theta=categories,
+            fill='toself',
+            name=f"{i+1}위: {name} ({score*100:.1f}%)",
+            fillcolor=fill_colors[i+1],
+            line=dict(color=line_colors[i+1], width=2),
+            opacity=0.7
+        ))
+
+    # 3. 레이아웃 및 범례 클릭 상호작용 설정
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
                 visible=True,
-                range=[0, 1] 
-            )),
+                range=[0, 1]  # 0~1 normalized range
+            )
+        ),
         showlegend=True,
-        title=title
+        legend=dict(
+            itemclick="toggle",         # 클릭 시 해당 그래프 숨김/보임 토글
+            itemdoubleclick="toggleothers" # 더블클릭 시 해당 요소만 집중 보기
+        ),
+        title=f"{selected_name}님과 상위 3명의 MBTI 비교 차트",
+        height=550
     )
     return fig
 
 # --- Streamlit UI ---
 st.set_page_config(layout="wide")
-st.title('MBTI 유사도 분석기')
+st.title('우리 학교 학생들의 MBTI 기반 성격 유사도 분석')
 
 user_dict, unit_vectors = load_data_from_gsheets()
 
@@ -110,19 +148,23 @@ else:
                     st.write(f"{i+1}위: **{name}** (유사도: {score*100:.2f}%)")
                     st.write(f"- 한마디: _{msg}_")
 
-            with col2:
-                st.subheader("점수 비교 (레이더 차트)")
-                categories = ['정신', '에너지', '본성', '전술', '자아']
+            # --- Streamlit UI 하단 영역 ---
+with col2:
+    st.subheader("점수 통합 비교 (레이더 차트)")
+    categories = ['정신', '에너지', '본성', '전술', '자아']
 
-                # Create radar chart for the selected user
-                selected_user_scores = unit_vectors[selected_name]['original_scores']
-                fig_selected = create_radar_chart(selected_user_scores, categories, f'{selected_name}님의 점수')
-                st.plotly_chart(fig_selected, use_container_width=True)
-
-                # Create radar charts for similar friends
-                for i, (name, score, msg, similar_scores) in enumerate(results):
-                    fig_similar = create_radar_chart(similar_scores, categories, f'{name} (유사도: {score*100:.2f}%)')
-                    st.plotly_chart(fig_similar, use_container_width=True)
+    selected_user_scores = unit_vectors[selected_name]['original_scores']
+    
+    # 하나의 레이더 차트에 본인 + 상위 3명 데이터 모두 투입
+    fig_combined = create_combined_radar_chart(
+        selected_name, 
+        selected_user_scores, 
+        results, 
+        categories
+    )
+    
+    # 통합 차트 출력
+    st.plotly_chart(fig_combined, use_container_width=True)
 
         else:
             st.write(results)
