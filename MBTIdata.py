@@ -166,6 +166,6 @@ with col2:
     # 통합 차트 출력
     st.plotly_chart(fig_combined, use_container_width=True)
 
-        else:
+    else:
             st.write(results)
             st.info("유사한 친구를 찾을 수 없습니다. 데이터가 충분한지 확인해주세요.")
