@@ -17,7 +17,12 @@ st.markdown("""
         color: #f0f2f5;
     }
 
-    /* 2. 텍스트 입력창(Text Input) 디자인 */
+    /* 2. 텍스트 입력창(Text Input) & 라벨 질문 문구 디자인 */
+    .stTextInput label, div[data-testid="stWidgetLabel"] p {
+        color: #ffffff !important;   /* 질문 문구 흰색 설정 */
+        font-size: 1.05rem !important;
+        font-weight: 600 !important;
+    }
     .stTextInput > div > div > input {
         background-color: #1e2235 !important;
         color: #ffffff !important;
@@ -30,7 +35,7 @@ st.markdown("""
         border-color: #6366f1 !important;
         box-shadow: 0 0 12px rgba(99, 102, 241, 0.4) !important;
     }
-
+    
     /* 3. 기본 세로 카드 (2위, 3위) */
     .friend-card {
         background: rgba(255, 255, 255, 0.04);
@@ -249,7 +254,6 @@ if not unit_vectors:
 else:
     # 사용자 이름 입력받기 (st.text_input)
     input_name = st.text_input('당신의 이름을 입력해 주세요:', placeholder='예: 홍길동').strip()
-    font=dict(color='#FFFFFF', size=16)
 
     if input_name:
         results = find(input_name, unit_vectors)
