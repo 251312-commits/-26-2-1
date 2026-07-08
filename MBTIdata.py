@@ -368,7 +368,8 @@ def create_combined_radar_chart(selected_name, selected_scores, results, categor
 
 
 # --- App Main UI ---
-st.title('**MBTI** 기반 성격 유사도 분석')
+st.title('연주의멋진세특적어주기☆')
+st.subheader('벡터를 이용해 Python으로 우리 학교 학생들의 MBTI 기반 성격 유사도 분석')
 st.markdown("---")
 
 user_dict, unit_vectors = load_data_from_gsheets()
