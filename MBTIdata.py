@@ -278,6 +278,10 @@ def create_combined_radar_chart(
 # --- App Main UI ---
 st.title("유영이가꼽줘서살기싫다")
 st.subheader("벡터를 이용해 Python으로 우리 학교 학생들의 MBTI 기반 성격 유사도 분석")
+# 🔄 새로고침 버튼 (클릭 시 캐시를 비우고 앱 재실행)
+if st.button("🔄 구글 시트 데이터 즉시 새로고침"):
+    st.cache_data.clear()
+    st.rerun()
 st.markdown("---")
 
 user_dict, unit_vectors = load_data_from_gsheets()
@@ -368,14 +372,3 @@ else:
         st.info(
             "👆 위 입력창에 본인의 이름을 입력하면 유사도 분석 결과를 확인하실 수 있습니다."
         )
-
-# --- App Main UI ---
-st.title('유영이가꼽줘서살기싫다')
-st.subheader('벡터를 이용해 Python으로 우리 학교 학생들의 MBTI 기반 성격 유사도 분석')
-
-# 🔄 새로고침 버튼 (클릭 시 캐시를 비우고 앱 재실행)
-if st.button("🔄 구글 시트 데이터 즉시 새로고침"):
-    st.cache_data.clear()
-    st.rerun()
-
-st.markdown("---")
