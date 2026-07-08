@@ -5,136 +5,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 import gspread
 import plotly.graph_objects as go
 
-# --- Google Sheets Data Loading ---
-@st.cache_data(ttl=300) # Cache data for 5 minutes
-def load_data_from_gsheets():
-    scope = ['https://spreadsheets.google.com/feeds',
-             'https://www.googleapis.com/auth/drive']
-
-    credentials_dict = dict(st.secrets["gcp_service_account"])
-    credential = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
-    gc = gspread.authorize(credential)
-
-    spreadsheet_url = "https://docs.google.com/spreadsheets/d/1xZwtZS7i7RDgemeAvkUczHFr8pe8KKstjM9qXqQPiCw/edit?usp=sharing"
-
-    doc = gc.open_by_url(spreadsheet_url)
-    sheet = doc.worksheet("설문지 응답 시트1")
-
-    data = sheet.get_all_records()
-
-    user_dict = {
-        str(row['이름']): [
-            row['선택'],
-            row['정신']/100,
-            row['에너지']/100,
-            row['본성']/100,
-            row['전술']/100,
-            row['자아']/100
-        ]
-        for row in data
-    }
-
-    unit_vectors = {}
-    for name, info in user_dict.items():
-        numdata = np.array(info[1:], dtype=float)
-        norm = np.linalg.norm(numdata)
-        if norm == 0:
-            unit_vector = np.zeros_like(numdata)
-        else:
-            unit_vector = numdata / norm
-
-        unit_vectors[name] = {
-            'vector': unit_vector,
-            'msg': info[0],
-            'original_scores': info[1:]
-        }
-    return user_dict, unit_vectors
-
-def find(target_name, unit_vectors):
-    if target_name not in unit_vectors:
-        return f"{target_name}이라는 이름은 데이터에 없습니다."
-    target_vec = unit_vectors[target_name]['vector']
-
-    similarities = []
-    for name, data in unit_vectors.items():
-        if name == target_name:
-            continue
-
-        score = np.dot(target_vec, data['vector'])
-        similarities.append((name, score, data['msg'], data['original_scores']))
-
-    similarities.sort(key=lambda x: x[1], reverse=True)
-    return similarities[:3]
-
-def create_combined_radar_chart(selected_name, selected_scores, results, categories):
-    fig = go.Figure()
-
-    fill_colors = [
-        'rgba(255, 99, 132, 0.4)',  # 붉은색 (본인)
-        'rgba(54, 162, 235, 0.3)',  # 파란색 (1위)
-        'rgba(75, 192, 192, 0.3)',  # 청록색 (2위)
-        'rgba(255, 206, 86, 0.3)'   # 노란색 (3위)
-    ]
-    line_colors = [
-        'rgb(255, 99, 132)',
-        'rgb(54, 162, 235)',
-        'rgb(75, 192, 192)',
-        'rgb(255, 206, 86)'
-    ]
-
-    # 💡 뚫린 도형을 닫기 위해 축 이름 배열의 첫 항목을 맨 뒤에 추가합니다.
-    closed_categories = list(categories) + [categories[0]]
-
-    # 1. 선택한 본인 데이터 (첫 번째 점을 맨 뒤에 붙여 도형을 완벽히 닫음)
-    closed_selected_scores = list(selected_scores) + [selected_scores[0]]
-    fig.add_trace(go.Scatterpolar(
-        r=closed_selected_scores,
-        theta=closed_categories,
-        fill='toself',
-        name=f"★ {selected_name} (나)",
-        fillcolor=fill_colors[0],
-        line=dict(color=line_colors[0], width=3),
-        opacity=0.9
-    ))
-
-    # 2. 유사한 친구 Top 3 데이터 (마찬가지로 도형 닫기)
-    for i, (name, score, _, similar_scores) in enumerate(results):
-        closed_similar_scores = list(similar_scores) + [similar_scores[0]]
-        fig.add_trace(go.Scatterpolar(
-            r=closed_similar_scores,
-            theta=closed_categories,
-            fill='toself',
-            name=f"{i+1}위: {name} ({score*100:.1f}%)",
-            fillcolor=fill_colors[i+1],
-            line=dict(color=line_colors[i+1], width=2),
-            opacity=0.7
-        ))
-
-    # 3. 레이아웃 설정
-    fig.update_layout(
-        polar=dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0, 1] 
-            )
-        ),
-        showlegend=True,
-        legend=dict(
-            itemclick="toggle",
-            itemdoubleclick="toggleothers"
-        ),
-        title=f"{selected_name}님과 상위 3명의 MBTI 비교 차트",
-        height=550
-    )
-    return fig
-
-import streamlit as st
-import numpy as np
-import pandas as pd
-from oauth2client.service_account import ServiceAccountCredentials
-import gspread
-import plotly.graph_objects as go
-
 # --- Streamlit Page Config ---
 st.set_page_config(layout="wide", page_title="우리 학교 MBTI 분석기")
 
@@ -144,7 +14,7 @@ st.markdown("""
     /* 1. 짙은 회색 기반 가로 그라데이션 배경 */
     .stApp {
         background: linear-gradient(90deg, #0d0f17 0%, #1a1d2e 50%, #0d0f17 100%);
-        color: #f0f2f5;
+        color: #1D2951;
     }
 
     /* 2. 텍스트 입력창(Text Input) 디자인 */
