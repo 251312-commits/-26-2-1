@@ -196,6 +196,19 @@ def create_combined_radar_chart(
 ):
     fig = go.Figure()
 
+    # 💡 기존 카테고리 이름을 원하는 이름으로 1:1 매핑
+    name_map = {
+        '정신': '외향/내향',
+        '에너지': '직관/감각',
+        '본성': '감정/사고',
+        '전술': '인식/판단',
+        '자아': '자아 정체성'
+    }
+    
+    # 매핑된 카테고리 이름으로 변환
+    mapped_categories = [name_map.get(cat, cat) for cat in categories]
+    closed_categories = list(mapped_categories) + [mapped_categories[0]]
+
     fill_colors = [
         "rgba(255, 99, 132, 0.45)",  # 본인 (분홍)
         "rgba(99, 102, 241, 0.35)",  # 1위 (보라)
