@@ -69,9 +69,8 @@ def find(target_name, unit_vectors):
 def create_combined_radar_chart(selected_name, selected_scores, results, categories):
     fig = go.Figure()
 
-    # 본인 및 1, 2, 3위 친구들을 위한 색상 정의 (RGBA 반투명 색상)
     fill_colors = [
-        'rgba(255, 99, 132, 0.6)',  # 붉은색 (본인)
+        'rgba(255, 99, 132, 0.4)',  # 붉은색 (본인)
         'rgba(54, 162, 235, 0.3)',  # 파란색 (1위)
         'rgba(75, 192, 192, 0.3)',  # 청록색 (2위)
         'rgba(255, 206, 86, 0.3)'   # 노란색 (3위)
@@ -83,10 +82,14 @@ def create_combined_radar_chart(selected_name, selected_scores, results, categor
         'rgb(255, 206, 86)'
     ]
 
-    # 1. 선택한 본인 데이터 추가
+    # 💡 뚫린 도형을 닫기 위해 축 이름 배열의 첫 항목을 맨 뒤에 추가합니다.
+    closed_categories = list(categories) + [categories[0]]
+
+    # 1. 선택한 본인 데이터 (첫 번째 점을 맨 뒤에 붙여 도형을 완벽히 닫음)
+    closed_selected_scores = list(selected_scores) + [selected_scores[0]]
     fig.add_trace(go.Scatterpolar(
-        r=selected_scores,
-        theta=categories,
+        r=closed_selected_scores,
+        theta=closed_categories,
         fill='toself',
         name=f"★ {selected_name} (나)",
         fillcolor=fill_colors[0],
@@ -94,11 +97,12 @@ def create_combined_radar_chart(selected_name, selected_scores, results, categor
         opacity=0.9
     ))
 
-    # 2. 유사한 친구 Top 3 데이터 순차적으로 추가
+    # 2. 유사한 친구 Top 3 데이터 (마찬가지로 도형 닫기)
     for i, (name, score, _, similar_scores) in enumerate(results):
+        closed_similar_scores = list(similar_scores) + [similar_scores[0]]
         fig.add_trace(go.Scatterpolar(
-            r=similar_scores,
-            theta=categories,
+            r=closed_similar_scores,
+            theta=closed_categories,
             fill='toself',
             name=f"{i+1}위: {name} ({score*100:.1f}%)",
             fillcolor=fill_colors[i+1],
@@ -106,7 +110,7 @@ def create_combined_radar_chart(selected_name, selected_scores, results, categor
             opacity=0.7
         ))
 
-    # 3. 레이아웃 및 범례 클릭 상호작용 설정
+    # 3. 레이아웃 설정
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
@@ -116,8 +120,8 @@ def create_combined_radar_chart(selected_name, selected_scores, results, categor
         ),
         showlegend=True,
         legend=dict(
-            itemclick="toggle",         # 범례 클릭 시 토글
-            itemdoubleclick="toggleothers" # 더블클릭 시 해당 요소만 표시
+            itemclick="toggle",
+            itemdoubleclick="toggleothers"
         ),
         title=f"{selected_name}님과 상위 3명의 MBTI 비교 차트",
         height=550
