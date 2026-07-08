@@ -196,10 +196,10 @@ def create_combined_radar_chart(
 ):
     fig = go.Figure()
 
-    # 💡 기존 카테고리 이름을 원하는 이름으로 1:1 매핑
+    # 💡 기존 카테고리 이름을 원하는 이름으로 1:1 매핑 (정신 <-> 에너지 위치 반영)
     name_map = {
-        '정신': '외향/내향',
         '에너지': '직관/감각',
+        '정신': '외향/내향',
         '본성': '감정/사고',
         '전술': '인식/판단',
         '자아': '자아 정체성'
@@ -221,8 +221,6 @@ def create_combined_radar_chart(
         "rgb(59, 130, 246)",
         "rgb(16, 185, 129)",
     ]
-
-    closed_categories = list(categories) + [categories[0]]
 
     # 1. 선택한 본인 데이터
     closed_selected_scores = list(selected_scores) + [selected_scores[0]]
@@ -291,6 +289,7 @@ def create_combined_radar_chart(
 # --- App Main UI ---
 st.title("성격 유사도 분석")
 st.subheader("벡터를 이용해 Python으로 우리 학교 학생들의 MBTI 기반 성격 유사도 분석")
+
 # 🔄 새로고침 버튼 (클릭 시 캐시를 비우고 앱 재실행)
 if st.button("🔄 구글 시트 데이터 즉시 새로고침"):
     st.cache_data.clear()
@@ -367,8 +366,8 @@ else:
             st.write("")
             st.write("")
 
-            # --- 레이더 차트 분석 ---
-            categories = ["정신", "에너지", "본성", "전술", "자아"]
+            # --- 레이더 차트 분석 ('에너지'와 '정신' 위치 변경) ---
+            categories = ["에너지", "정신", "본성", "전술", "자아"]
             selected_user_scores = unit_vectors[input_name]["original_scores"]
 
             fig_combined = create_combined_radar_chart(
