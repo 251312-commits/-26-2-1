@@ -248,7 +248,7 @@ if not unit_vectors:
     st.error("데이터를 불러오지 못했습니다. Google Sheets 연결을 확인해주세요.")
 else:
     # 사용자 이름 입력받기 (st.text_input)
-    input_name = st.text_input('당신의 이름을 입력해 주세요:', placeholder='예: 홍길동').strip()
+    input_name = st.text_input('당신의 이름을 입력해 주세요:', placeholder='예: 홍길동', color: #ffffff;).strip()
 
     if input_name:
         results = find(input_name, unit_vectors)
