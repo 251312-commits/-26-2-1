@@ -125,41 +125,45 @@ def load_data_from_gsheets():
 
     data = sheet.get_all_records()
 
+    # user_dict에 MBTI 문자열도 함께 보관하도록 구조 업데이트
     user_dict = {
-        str(row["이름"]).strip(): [
-            row["선택"],
-            (
-                row["정신"] / 100
-                if str(row["MBTI"])[1].lower() == "n"
-                else 1 - row["정신"] / 100
-            ),
-            (
-                row["에너지"] / 100
-                if str(row["MBTI"])[0].lower() == "i"
-                else 1 - row["에너지"] / 100
-            ),
-            (
-                row["본성"] / 100
-                if str(row["MBTI"])[2].lower() == "f"
-                else 1 - row["본성"] / 100
-            ),
-            (
-                row["전술"] / 100
-                if str(row["MBTI"])[3].lower() == "p"
-                else 1 - row["전술"] / 100
-            ),
-            (
-                row["자아"] / 100
-                if str(row["MBTI"])[4].lower() == "a"
-                else 1 - row["자아"] / 100
-            ),
-        ]
+        str(row["이름"]).strip(): {
+            "msg": row["선택"],
+            "mbti": str(row["MBTI"]).strip(),
+            "scores": [
+                (
+                    row["정신"] / 100
+                    if str(row["MBTI"])[1].lower() == "n"
+                    else 1 - row["정신"] / 100
+                ),
+                (
+                    row["에너지"] / 100
+                    if str(row["MBTI"])[0].lower() == "i"
+                    else 1 - row["에너지"] / 100
+                ),
+                (
+                    row["본성"] / 100
+                    if str(row["MBTI"])[2].lower() == "f"
+                    else 1 - row["본성"] / 100
+                ),
+                (
+                    row["전술"] / 100
+                    if str(row["MBTI"])[3].lower() == "p"
+                    else 1 - row["전술"] / 100
+                ),
+                (
+                    row["자아"] / 100
+                    if str(row["MBTI"])[4].lower() == "a"
+                    else 1 - row["자아"] / 100
+                ),
+            ],
+        }
         for row in data
     }
 
     unit_vectors = {}
     for name, info in user_dict.items():
-        numdata = np.array(info[1:], dtype=float)
+        numdata = np.array(info["scores"], dtype=float)
         norm = np.linalg.norm(numdata)
         if norm == 0:
             unit_vector = np.zeros_like(numdata)
@@ -168,8 +172,9 @@ def load_data_from_gsheets():
 
         unit_vectors[name] = {
             "vector": unit_vector,
-            "msg": info[0],
-            "original_scores": info[1:],
+            "msg": info["msg"],
+            "mbti": info["mbti"],
+            "original_scores": info["scores"],
         }
     return user_dict, unit_vectors
 
@@ -379,7 +384,7 @@ else:
         )
 
     # ---------------------------------------------------------
-    # 위치 이동: [설명창(st.info) 밑으로 이동한 원리 설명 Expander]
+    # 설명창(st.info) 밑으로 이동한 원리 설명 Expander
     # ---------------------------------------------------------
     with st.expander("📐 **수학/알고리즘 원리 알아보기 (클릭)**"):
         st.markdown(
@@ -477,7 +482,6 @@ else:
             col_sel, col_btn = st.columns([3, 1])
 
             with col_sel:
-                # 텍스트 입력창으로 변경
                 target_friend = st.text_input(
                     "비교하고 싶은 친구의 이름을 입력해 주세요:",
                     placeholder="예: 김철수",
@@ -510,9 +514,9 @@ else:
                     friend_msg = unit_vectors[target_friend]["msg"]
 
                     # ---------------------------------------------------------
-                    # ✨ 친구 MBTI 대문자 변환 및 포맷팅 (예: ENFP-A)
+                    # ✨ 정확한 친구 MBTI 가져오기 및 포맷팅 (예: ENFP-A)
                     # ---------------------------------------------------------
-                    raw_mbti = str(user_dict[target_friend][0]).upper().strip()  # 기본 MBTI 데이터 가져오기
+                    raw_mbti = unit_vectors[target_friend]["mbti"].upper()
 
                     if len(raw_mbti) >= 5:
                         formatted_mbti = f"{raw_mbti[:4]}-{raw_mbti[4:]}"
@@ -526,8 +530,8 @@ else:
                             f"""
                             <div class="friend-card" style="margin-top: 0px; text-align: left;">
                                 <h3 style="color:#ffffff; margin-bottom:10px;">🤝 궁합 분석 결과</h3>
-                                <p style="font-size: 1.1rem; margin-bottom: 4px;"><b>{input_name}</b> & <b>{target_friend}</b></p>
-                                <div style="font-size: 1.6rem; font-weight: 800; color: #a5b4fc; margin-bottom: 12px;">
+                                <p style="font-size: 1.1rem; margin-bottom: 2px;"><b>{input_name}</b> & <b>{target_friend}</b></p>
+                                <div style="font-size: 1.5rem; font-weight: 800; color: #a5b4fc; margin-bottom: 12px;">
                                     {formatted_mbti}
                                 </div>
                                 <div style="font-size: 2.2rem; font-weight: bold; color: #6366f1; margin: 10px 0;">
