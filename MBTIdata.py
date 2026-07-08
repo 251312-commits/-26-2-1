@@ -71,7 +71,7 @@ def create_combined_radar_chart(selected_name, selected_scores, results, categor
 
     # 본인 및 1, 2, 3위 친구들을 위한 색상 정의 (RGBA 반투명 색상)
     fill_colors = [
-        'rgba(255, 99, 132, 0.4)',  # 붉은색 (본인)
+        'rgba(255, 99, 132, 0.6)',  # 붉은색 (본인)
         'rgba(54, 162, 235, 0.3)',  # 파란색 (1위)
         'rgba(75, 192, 192, 0.3)',  # 청록색 (2위)
         'rgba(255, 206, 86, 0.3)'   # 노란색 (3위)
