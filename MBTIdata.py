@@ -47,7 +47,7 @@ st.markdown(
         border: 1px solid rgba(255, 255, 255, 0.08);
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         text-align: center;
-        margin-top: 30px; /* 1위 카드보다 아래에 위치하도록 여백 설정 */
+        margin-top: 30px;
     }
 
     /* 4. 중앙 강조 카드 (1위: 위로 우뚝 솟은 포디움 효과) */
@@ -60,7 +60,7 @@ st.markdown(
         border: 1px solid rgba(99, 102, 241, 0.5);
         box-shadow: 0 15px 35px rgba(99, 102, 241, 0.25);
         text-align: center;
-        transform: translateY(-10px); /* 위로 입체적으로 떠오름 */
+        transform: translateY(-10px);
     }
 
     /* 카드 내부 요소 스타일 */
@@ -101,11 +101,11 @@ st.markdown(
     
     /* 강조용 색상 스타일 */
     .my-text {
-        color: #ff6b81 !important; /* 내 이름 & 내 MBTI 강조 색상 (분홍/장미색) */
+        color: #ff6b81 !important; /* 내 이름 & 내 MBTI 강조 색상 */
         font-weight: 700;
     }
     .target-text {
-        color: #a5b4fc !important; /* 상대 MBTI 색상 (연보라) */
+        color: #a5b4fc !important; /* 상대 MBTI 색상 */
         font-weight: 700;
     }
 </style>
@@ -135,40 +135,31 @@ def load_data_from_gsheets():
 
     data = sheet.get_all_records()
 
-    user_dict = {
-        str(row["이름"]).strip(): {
+    user_dict = {}
+    for row in data:
+        name = str(row["이름"]).strip()
+        mbti_str = str(row["MBTI"]).strip().upper()
+
+        # MBTI 조건 판단 로직 안전화 (글자 위치 기반 대신 문자 포함 검사)
+        is_n = "N" in mbti_str
+        is_i = "I" in mbti_str
+        is_f = "F" in mbti_str
+        is_p = "P" in mbti_str
+        is_a = "A" in mbti_str
+
+        scores = [
+            row["정신"] / 100 if is_n else 1 - row["정신"] / 100,
+            row["에너지"] / 100 if is_i else 1 - row["에너지"] / 100,
+            row["본성"] / 100 if is_f else 1 - row["본성"] / 100,
+            row["전술"] / 100 if is_p else 1 - row["전술"] / 100,
+            row["자아"] / 100 if is_a else 1 - row["자아"] / 100,
+        ]
+
+        user_dict[name] = {
             "msg": row["선택"],
-            "mbti": str(row["MBTI"]).strip(),
-            "scores": [
-                (
-                    row["정신"] / 100
-                    if str(row["MBTI"])[1].lower() == "n"
-                    else 1 - row["정신"] / 100
-                ),
-                (
-                    row["에너지"] / 100
-                    if str(row["MBTI"])[0].lower() == "i"
-                    else 1 - row["에너지"] / 100
-                ),
-                (
-                    row["본성"] / 100
-                    if str(row["MBTI"])[2].lower() == "f"
-                    else 1 - row["본성"] / 100
-                ),
-                (
-                    row["전술"] / 100
-                    if str(row["MBTI"])[3].lower() == "p"
-                    else 1 - row["전술"] / 100
-                ),
-                (
-                    row["자아"] / 100
-                    if str(row["MBTI"])[4].lower() == "a"
-                    else 1 - row["자아"] / 100
-                ),
-            ],
+            "mbti": mbti_str,
+            "scores": scores,
         }
-        for row in data
-    }
 
     unit_vectors = {}
     for name, info in user_dict.items():
@@ -222,10 +213,10 @@ def create_combined_radar_chart(
     closed_categories = list(mapped_categories) + [mapped_categories[0]]
 
     fill_colors = [
-        "rgba(255, 99, 132, 0.45)",  # 본인 (분홍)
-        "rgba(99, 102, 241, 0.35)",  # 1위 (보라)
-        "rgba(59, 130, 246, 0.35)",  # 2위 (파랑)
-        "rgba(16, 185, 129, 0.35)",  # 3위 (초록)
+        "rgba(255, 99, 132, 0.45)",  # 본인
+        "rgba(99, 102, 241, 0.35)",  # 1위
+        "rgba(59, 130, 246, 0.35)",  # 2위
+        "rgba(16, 185, 129, 0.35)",  # 3위
     ]
     line_colors = [
         "rgb(255, 99, 132)",
@@ -296,7 +287,6 @@ def create_combined_radar_chart(
 
 
 def create_pair_radar_chart(name1, scores1, name2, scores2, score_pct, categories):
-    """1:1 비교 전용 레이더 차트"""
     fig = go.Figure()
 
     name_map = {
@@ -310,7 +300,6 @@ def create_pair_radar_chart(name1, scores1, name2, scores2, score_pct, categorie
     mapped_categories = [name_map.get(cat, cat) for cat in categories]
     closed_categories = list(mapped_categories) + [mapped_categories[0]]
 
-    # 본인 데이터
     closed1 = list(scores1) + [scores1[0]]
     fig.add_trace(
         go.Scatterpolar(
@@ -323,7 +312,6 @@ def create_pair_radar_chart(name1, scores1, name2, scores2, score_pct, categorie
         )
     )
 
-    # 지목한 친구 데이터
     closed2 = list(scores2) + [scores2[0]]
     fig.add_trace(
         go.Scatterpolar(
@@ -365,11 +353,10 @@ def create_pair_radar_chart(name1, scores1, name2, scores2, score_pct, categorie
     return fig
 
 
-# --- Helper Function for Formatting MBTI ---
 def format_mbti_string(mbti_str):
     raw = str(mbti_str).upper().strip()
-    if len(raw) >= 5:
-        return f"{raw[:4]}-{raw[4:]}"
+    if len(raw) == 5:
+        return f"{raw[:4]}-{raw[4]}"
     return raw
 
 
@@ -377,7 +364,6 @@ def format_mbti_string(mbti_str):
 st.title("성격 유사도 분석")
 st.subheader("벡터를 이용해 Python으로 우리 학교 학생들의 MBTI 기반 성격 유사도 분석")
 
-# 🔄 새로고침 버튼
 if st.button("🔄 구글 시트 데이터 즉시 새로고침"):
     st.cache_data.clear()
     st.rerun()
@@ -389,7 +375,6 @@ user_dict, unit_vectors = load_data_from_gsheets()
 if not unit_vectors:
     st.error("데이터를 불러오지 못했습니다. Google Sheets 연결을 확인해주세요.")
 else:
-    # 1. 사용자 이름 입력받기
     input_name = st.text_input(
         "당신의 이름을 입력해 주세요:", placeholder="예: 홍길동"
     ).strip()
@@ -426,7 +411,6 @@ else:
         if results:
             st.markdown(f"### 🔍 **{input_name}**님과 가장 잘 맞는 Top 3 친구들")
 
-            # Top 3 카드 배치
             c_left, c_center, c_right = st.columns(3)
 
             if len(results) >= 2:
@@ -477,7 +461,6 @@ else:
             st.write("")
             st.write("")
 
-            # Top 3 오각형 비교 차트
             categories = ["정신", "에너지", "본성", "전술", "자아"]
             selected_user_scores = unit_vectors[input_name]["original_scores"]
 
@@ -486,9 +469,6 @@ else:
             )
             st.plotly_chart(fig_combined, use_container_width=True)
 
-            # ---------------------------------------------------------
-            # 2. 1:1 비교 전용 섹션 (텍스트 입력 방식 + 분석 버튼)
-            # ---------------------------------------------------------
             st.markdown("---")
             st.markdown("### 🎯 **특정 친구와 1:1 비교 분석하기**")
 
@@ -502,7 +482,7 @@ else:
                 ).strip()
 
             with col_btn:
-                st.write("")  # 높이 맞춤 여백
+                st.write("")
                 st.write("")
                 btn_pair = st.button("🎯 1:1 비교 분석하기", use_container_width=True)
 
@@ -524,7 +504,6 @@ else:
                     scores2 = unit_vectors[target_friend]["original_scores"]
                     friend_msg = unit_vectors[target_friend]["msg"]
 
-                    # ✨ 내 MBTI와 상대방 MBTI 포맷팅
                     my_mbti = format_mbti_string(unit_vectors[input_name]["mbti"])
                     target_mbti = format_mbti_string(
                         unit_vectors[target_friend]["mbti"]
@@ -533,13 +512,11 @@ else:
                     col_info1, col_info2 = st.columns([1, 2])
 
                     with col_info1:
-                        # 내 이름 & 내 MBTI는 Pink계열(.my-text), 상대 정보는 Light Blue계열(.target-text) 적용
                         st.markdown(
                             f"""
                             <div class="friend-card" style="margin-top: 0px; text-align: left;">
                                 <h3 style="color:#ffffff; margin-bottom:12px;">🤝 궁합 분석 결과</h3>
                                 
-                                <!-- 이름 & MBTI 한 줄 형태로 출력 -->
                                 <div style="font-size: 1.15rem; line-height: 1.6; margin-bottom: 12px;">
                                     <span class="my-text">{input_name}</span> (<span class="my-text">{my_mbti}</span>) 
                                     <span style="color:#ffffff;"> & </span> 
