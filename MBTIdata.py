@@ -118,17 +118,37 @@ def load_data_from_gsheets():
 
     data = sheet.get_all_records()
 
-    user_dict = {
-        str(row['이름']).strip(): [
-            row['선택'],
-            row['정신']/100,
-            row['에너지']/100,
-            row['본성']/100,
-            row['전술']/100,
-            row['자아']/100
-        ]
-        for row in data
-    }
+   user_dict = {
+    str(row['이름']).strip(): [
+        row['선택'],  # 만약 'MBTI' 문자를 넣고 싶다면 row['MBTI']로 변경
+        (
+            row['정신'] / 100
+            if str(row['MBTI'])[0].lower() == 'i'
+            else 1 - row['정신'] / 100
+        ),
+        (
+            row['에너지'] / 100
+            if str(row['MBTI'])[1].lower() == 'n'
+            else 1 - row['에너지'] / 100
+        ),
+        (
+            row['본성'] / 100
+            if str(row['MBTI'])[2].lower() == 'f'
+            else 1 - row['본성'] / 100
+        ),
+        (
+            row['전술'] / 100
+            if str(row['MBTI'])[3].lower() == 'p'
+            else 1 - row['전술'] / 100
+        ),
+        (
+            row['자아'] / 100
+            if str(row['MBTI'])[4].lower() == 'a'
+            else 1 - row['자아'] / 100
+        ),
+    ]
+    for row in data
+}
 
     unit_vectors = {}
     for name, info in user_dict.items():
