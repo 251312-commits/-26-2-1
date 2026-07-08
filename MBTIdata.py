@@ -191,12 +191,12 @@ def find(target_name, unit_vectors):
     return similarities[:3]
 
 
+# --- 차트 생성 함수들 ---
 def create_combined_radar_chart(
     selected_name, selected_scores, results, categories
 ):
     fig = go.Figure()
 
-    # 💡 기존 카테고리 이름을 원하는 이름으로 1:1 매핑
     name_map = {
         "에너지": "에너지(I)",
         "정신": "정신(N)",
@@ -205,7 +205,6 @@ def create_combined_radar_chart(
         "자아": "자아(A)",
     }
 
-    # 매핑된 카테고리 이름으로 변환
     mapped_categories = [name_map.get(cat, cat) for cat in categories]
     closed_categories = list(mapped_categories) + [mapped_categories[0]]
 
@@ -251,7 +250,6 @@ def create_combined_radar_chart(
             )
         )
 
-    # 3. 다크 모드 전용 레이아웃 설정
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
@@ -286,14 +284,107 @@ def create_combined_radar_chart(
     return fig
 
 
+def create_pair_radar_chart(name1, scores1, name2, scores2, score_pct, categories):
+    """1:1 비교 전용 레이더 차트"""
+    fig = go.Figure()
+
+    name_map = {
+        "에너지": "에너지(I)",
+        "정신": "정신(N)",
+        "본성": "본성(F)",
+        "전술": "전술(P)",
+        "자아": "자아(A)",
+    }
+
+    mapped_categories = [name_map.get(cat, cat) for cat in categories]
+    closed_categories = list(mapped_categories) + [mapped_categories[0]]
+
+    # 본인 데이터
+    closed1 = list(scores1) + [scores1[0]]
+    fig.add_trace(
+        go.Scatterpolar(
+            r=closed1,
+            theta=closed_categories,
+            fill="toself",
+            name=f"★ {name1} (나)",
+            fillcolor="rgba(255, 99, 132, 0.45)",
+            line=dict(color="rgb(255, 99, 132)", width=3),
+        )
+    )
+
+    # 지목한 친구 데이터
+    closed2 = list(scores2) + [scores2[0]]
+    fig.add_trace(
+        go.Scatterpolar(
+            r=closed2,
+            theta=closed_categories,
+            fill="toself",
+            name=f"👥 {name2}",
+            fillcolor="rgba(245, 158, 11, 0.45)",
+            line=dict(color="rgb(245, 158, 11)", width=3),
+        )
+    )
+
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#E2E8F0", size=13),
+        polar=dict(
+            bgcolor="rgba(255,255,255,0.02)",
+            radialaxis=dict(
+                visible=True,
+                range=[0, 1],
+                gridcolor="rgba(255, 255, 255, 0.15)",
+                linecolor="rgba(255, 255, 255, 0.2)",
+                tickfont=dict(color="#9CA3AF"),
+            ),
+            angularaxis=dict(
+                gridcolor="rgba(255, 255, 255, 0.15)",
+                linecolor="rgba(255, 255, 255, 0.2)",
+                tickfont=dict(color="#F3F4F6"),
+            ),
+        ),
+        showlegend=True,
+        title=dict(
+            text=f"⚔️ {name1} VS {name2} 성격 성향 비교 (유사도: {score_pct:.2f}%)",
+            font=dict(color="#FFFFFF", size=16),
+        ),
+        height=500,
+    )
+    return fig
+
+
 # --- App Main UI ---
 st.title("성격 유사도 분석")
 st.subheader("벡터를 이용해 Python으로 우리 학교 학생들의 MBTI 기반 성격 유사도 분석")
 
-# 🔄 새로고침 버튼 (클릭 시 캐시를 비우고 앱 재실행)
+# 🔄 새로고침 버튼
 if st.button("🔄 구글 시트 데이터 즉시 새로고침"):
     st.cache_data.clear()
     st.rerun()
+
+# ---------------------------------------------------------
+# ✨ [신규 기능 1] 알고리즘 / 수학적 원리 설명 버튼 (Expander)
+# ---------------------------------------------------------
+with st.expander("📐 **수학/알고리즘 원리 알아보기 (클릭)**"):
+    st.markdown(
+        """
+    #### 1. MBTI 성격의 5차원 벡터화
+    각 사람의 MBTI 5가지 척도(정신, 에너지, 본성, 전술, 자아) 비율 데이터를 5차원 공간상의 위치(벡터)인 $\vec{v} = (v_1, v_2, v_3, v_4, v_5)$ 로 나타냅니다.
+    
+    #### 2. 단위 벡터 정규화 ($L_2$ Norm)
+    성향의 절댓값 크기가 아닌 **'성향 비율의 방향성'**만을 비교하기 위해 각 벡터를 크기(길이) $1$인 단위 벡터 $\hat{u}$로 정규화합니다.
+    $$\hat{u} = \\frac{\vec{v}}{\|\vec{v}\|}$$
+    
+    #### 3. 벡터 내적(Dot Product)과 코사인 유사도
+    두 사람의 정규화된 성격 벡터 $\hat{u}_A$와 $\hat{u}_B$의 내적을 구하면, 이는 두 성향 벡터가 이루는 각도의 **코사인 유사도(Cosine Similarity)**가 됩니다.
+    $$\text{Similarity} = \hat{u}_A \cdot \hat{u}_B = \|\hat{u}_A\|\|\hat{u}_B\|\cos(\theta) = \cos(\theta)$$
+    
+    * 두 사람의 성향 패턴이 완전히 일치하면 $\theta = 0^\circ \rightarrow \mathbf{100\%}$
+    * 벡터가 이루는 각이 커질수록 유사도 점수가 낮아지게 됩니다.
+    """
+    )
+
 st.markdown("---")
 
 user_dict, unit_vectors = load_data_from_gsheets()
@@ -301,7 +392,6 @@ user_dict, unit_vectors = load_data_from_gsheets()
 if not unit_vectors:
     st.error("데이터를 불러오지 못했습니다. Google Sheets 연결을 확인해주세요.")
 else:
-    # 사용자 이름 입력받기 (st.text_input)
     input_name = st.text_input(
         "당신의 이름을 입력해 주세요:", placeholder="예: 홍길동"
     ).strip()
@@ -310,7 +400,7 @@ else:
         results = find(input_name, unit_vectors)
 
         if results:
-            st.markdown(f"### 🔍 **{input_name}**님과 가장 잘 맞는 친구들")
+            st.markdown(f"### 🔍 **{input_name}**님과 가장 잘 맞는 Top 3 친구들")
 
             # --- 카드 3개 레이아웃 (포디움배치: 2위 | 1위(중앙/우뚝) | 3위) ---
             c_left, c_center, c_right = st.columns(3)
@@ -331,7 +421,7 @@ else:
                         unsafe_allow_html=True,
                     )
 
-            # 1위 카드 (중앙 - 우뚝 솟음)
+            # 1위 카드 (중앙)
             if len(results) >= 1:
                 name, score, msg, _ = results[0]
                 with c_center:
@@ -366,15 +456,74 @@ else:
             st.write("")
             st.write("")
 
-            # --- 레이더 차트 분석 ---
+            # Top 3 전체 비교 레이더 차트
             categories = ["정신", "에너지", "본성", "전술", "자아"]
             selected_user_scores = unit_vectors[input_name]["original_scores"]
 
             fig_combined = create_combined_radar_chart(
                 input_name, selected_user_scores, results, categories
             )
-
             st.plotly_chart(fig_combined, use_container_width=True)
+
+            # ---------------------------------------------------------
+            # ✨ [신규 기능 2] 특정 친구 검색 및 1:1 비교
+            # ---------------------------------------------------------
+            st.markdown("---")
+            st.markdown("### 🎯 **특정 친구와 1:1 비교 분석하기**")
+
+            # 내 이름을 제외한 나머지 친구 목록 추출
+            other_friends = [
+                name for name in unit_vectors.keys() if name != input_name
+            ]
+
+            if other_friends:
+                target_friend = st.selectbox(
+                    "궁금한 친구의 이름을 선택하세요:",
+                    options=other_friends,
+                    index=0,
+                )
+
+                if target_friend:
+                    # 선택한 친구와의 내적 유사도 계산
+                    vec1 = unit_vectors[input_name]["vector"]
+                    vec2 = unit_vectors[target_friend]["vector"]
+                    pair_score = float(np.dot(vec1, vec2)) * 100
+
+                    scores1 = unit_vectors[input_name]["original_scores"]
+                    scores2 = unit_vectors[target_friend]["original_scores"]
+
+                    # 지목된 친구의 한마디 메시지 가져오기
+                    friend_msg = unit_vectors[target_friend]["msg"]
+
+                    # 결과 출력
+                    col_info1, col_info2 = st.columns([1, 2])
+
+                    with col_info1:
+                        st.markdown(
+                            f"""
+                            <div class="friend-card" style="margin-top: 0px; text-align: left;">
+                                <h3 style="color:#ffffff; margin-bottom:10px;">🤝 궁합 분석 결과</h3>
+                                <p style="font-size: 1.1rem;"><b>{input_name}</b> & <b>{target_friend}</b></p>
+                                <div style="font-size: 2.2rem; font-weight: bold; color: #6366f1; margin: 15px 0;">
+                                    {pair_score:.2f}%
+                                </div>
+                                <p style="color: #a5b4fc; font-size: 0.9rem;">💬 <b>{target_friend}의 한마디:</b></p>
+                                <div class="message-box">"{friend_msg}"</div>
+                            </div>
+                        """,
+                            unsafe_allow_html=True,
+                        )
+
+                    with col_info2:
+                        fig_pair = create_pair_radar_chart(
+                            input_name,
+                            scores1,
+                            target_friend,
+                            scores2,
+                            pair_score,
+                            categories,
+                        )
+                        st.plotly_chart(fig_pair, use_container_width=True)
 
         else:
             st.warning(
