@@ -13,8 +13,8 @@ st.markdown("""
 <style>
     /* 1. 짙은 회색 기반 가로 그라데이션 배경 */
     .stApp {
-        background: linear-gradient(90deg, #0d0f17 0%, #1a1d2e 50%, #0d0f17 100%);
-        color: #1D2951;
+        background: linear-gradient(90deg, #0d0f17 0%, #1a1d2e 50%, #1D2951 100%);
+        color: #f0f2f5;
     }
 
     /* 2. 텍스트 입력창(Text Input) 디자인 */
