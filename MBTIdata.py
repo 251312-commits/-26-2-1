@@ -83,7 +83,7 @@ def create_combined_radar_chart(selected_name, selected_scores, results, categor
         'rgb(255, 206, 86)'
     ]
 
-    # 1. 선택한 본인 데이터 추가 (가장 강조되도록 선 두께를 3으로 설정)
+    # 1. 선택한 본인 데이터 추가
     fig.add_trace(go.Scatterpolar(
         r=selected_scores,
         theta=categories,
@@ -111,13 +111,13 @@ def create_combined_radar_chart(selected_name, selected_scores, results, categor
         polar=dict(
             radialaxis=dict(
                 visible=True,
-                range=[0, 1]  # 0~1 normalized range
+                range=[0, 1] 
             )
         ),
         showlegend=True,
         legend=dict(
-            itemclick="toggle",         # 클릭 시 해당 그래프 숨김/보임 토글
-            itemdoubleclick="toggleothers" # 더블클릭 시 해당 요소만 집중 보기
+            itemclick="toggle",         # 범례 클릭 시 토글
+            itemdoubleclick="toggleothers" # 더블클릭 시 해당 요소만 표시
         ),
         title=f"{selected_name}님과 상위 3명의 MBTI 비교 차트",
         height=550
@@ -142,30 +142,30 @@ else:
 
         if isinstance(results, list) and results:
             col1, col2 = st.columns(2)
+            
             with col1:
                 st.subheader("가장 유사한 친구들")
                 for i, (name, score, msg, _) in enumerate(results):
                     st.write(f"{i+1}위: **{name}** (유사도: {score*100:.2f}%)")
                     st.write(f"- 한마디: _{msg}_")
 
-            # --- Streamlit UI 하단 영역 ---
-with col2:
-    st.subheader("점수 통합 비교 (레이더 차트)")
-    categories = ['정신', '에너지', '본성', '전술', '자아']
+            with col2:
+                st.subheader("점수 통합 비교 (레이더 차트)")
+                categories = ['정신', '에너지', '본성', '전술', '자아']
 
-    selected_user_scores = unit_vectors[selected_name]['original_scores']
-    
-    # 하나의 레이더 차트에 본인 + 상위 3명 데이터 모두 투입
-    fig_combined = create_combined_radar_chart(
-        selected_name, 
-        selected_user_scores, 
-        results, 
-        categories
-    )
-    
-    # 통합 차트 출력
-    st.plotly_chart(fig_combined, use_container_width=True)
+                selected_user_scores = unit_vectors[selected_name]['original_scores']
+                
+                # 하나의 레이더 차트에 본인 + 상위 3명 데이터 모두 투입
+                fig_combined = create_combined_radar_chart(
+                    selected_name, 
+                    selected_user_scores, 
+                    results, 
+                    categories
+                )
+                
+                # 통합 차트 출력
+                st.plotly_chart(fig_combined, use_container_width=True)
 
-    else:
+        else:
             st.write(results)
             st.info("유사한 친구를 찾을 수 없습니다. 데이터가 충분한지 확인해주세요.")
