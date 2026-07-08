@@ -368,7 +368,7 @@ def create_combined_radar_chart(selected_name, selected_scores, results, categor
 
 
 # --- App Main UI ---
-st.title('✨ MBTI 기반 성격 유사도 분석')
+st.title('**MBTI** 기반 성격 유사도 분석')
 st.markdown("---")
 
 user_dict, unit_vectors = load_data_from_gsheets()
