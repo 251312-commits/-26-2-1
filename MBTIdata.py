@@ -509,6 +509,16 @@ else:
                     scores2 = unit_vectors[target_friend]["original_scores"]
                     friend_msg = unit_vectors[target_friend]["msg"]
 
+                    # ---------------------------------------------------------
+                    # ✨ 친구 MBTI 대문자 변환 및 포맷팅 (예: ENFP-A)
+                    # ---------------------------------------------------------
+                    raw_mbti = str(user_dict[target_friend][0]).upper().strip()  # 기본 MBTI 데이터 가져오기
+
+                    if len(raw_mbti) >= 5:
+                        formatted_mbti = f"{raw_mbti[:4]}-{raw_mbti[4:]}"
+                    else:
+                        formatted_mbti = raw_mbti
+
                     col_info1, col_info2 = st.columns([1, 2])
 
                     with col_info1:
@@ -516,8 +526,11 @@ else:
                             f"""
                             <div class="friend-card" style="margin-top: 0px; text-align: left;">
                                 <h3 style="color:#ffffff; margin-bottom:10px;">🤝 궁합 분석 결과</h3>
-                                <p style="font-size: 1.1rem;"><b>{input_name}</b> & <b>{target_friend}</b></p>
-                                <div style="font-size: 2.2rem; font-weight: bold; color: #6366f1; margin: 15px 0;">
+                                <p style="font-size: 1.1rem; margin-bottom: 4px;"><b>{input_name}</b> & <b>{target_friend}</b></p>
+                                <div style="font-size: 1.6rem; font-weight: 800; color: #a5b4fc; margin-bottom: 12px;">
+                                    {formatted_mbti}
+                                </div>
+                                <div style="font-size: 2.2rem; font-weight: bold; color: #6366f1; margin: 10px 0;">
                                     {pair_score:.2f}%
                                 </div>
                                 <p style="color: #a5b4fc; font-size: 0.9rem;">💬 <b>{target_friend}의 한마디:</b></p>
