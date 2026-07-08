@@ -511,27 +511,24 @@ else:
 
                     col_info1, col_info2 = st.columns([1, 2])
 
-                    with col_info1:
-                        st.markdown(
-                            f"""
-                            <div class="friend-card" style="margin-top: 0px; text-align: left;">
-                                <h3 style="color:#ffffff; margin-bottom:12px;">🤝 궁합 분석 결과</h3>
-                                
-                                <div style="font-size: 1.15rem; line-height: 1.6; margin-bottom: 12px;">
-                                    <span class="my-text">{input_name}</span> (<span class="my-text">{my_mbti}</span>) 
-                                    <span style="color:#ffffff;"> & </span> 
-                                    <span>{target_friend}</span> (<span class="target-text">{target_mbti}</span>)
-                                </div>
-                                
-                                <div style="font-size: 2.2rem; font-weight: bold; color: #6366f1; margin: 10px 0;">
-                                    {pair_score:.2f}%
-                                </div>
-                                <p style="color: #a5b4fc; font-size: 0.9rem;">💬 <b>{target_friend}의 한마디:</b></p>
-                                <div class="message-box">"{friend_msg}"</div>
-                            </div>
-                        """,
-                            unsafe_allow_html=True,
-                        )
+                   with col_info1:
+    # HTML 태그 간 공백 및 줄바꿈으로 인한 파싱 오류 방지를 위해 한 줄로 정리
+    card_html = f"""
+    <div class="friend-card" style="margin-top: 0px; text-align: left;">
+        <h3 style="color:#ffffff; margin-bottom:12px;">🤝 궁합 분석 결과</h3>
+        <div style="font-size: 1.15rem; line-height: 1.6; margin-bottom: 12px;">
+            <span class="my-text">{input_name} ({my_mbti})</span>
+            <span style="color:#ffffff;"> & </span>
+            <span style="color:#ffffff;">{target_friend}</span> (<span class="target-text">{target_mbti}</span>)
+        </div>
+        <div style="font-size: 2.2rem; font-weight: bold; color: #6366f1; margin: 10px 0;">
+            {pair_score:.2f}%
+        </div>
+        <p style="color: #a5b4fc; font-size: 0.9rem;">💬 <b>{target_friend}의 한마디:</b></p>
+        <div class="message-box">"{friend_msg}"</div>
+    </div>
+    """
+    st.markdown(card_html, unsafe_allow_html=True)
 
                     with col_info2:
                         fig_pair = create_pair_radar_chart(
