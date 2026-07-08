@@ -127,7 +127,7 @@ def load_data_from_gsheets():
 
     user_dict = {
         str(row["이름"]).strip(): [
-            row["선택"],  # 만약 'MBTI' 문자를 넣고 싶다면 row['MBTI']로 변경
+            row["선택"],
             (
                 row["정신"] / 100
                 if str(row["MBTI"])[1].lower() == "n"
@@ -191,7 +191,6 @@ def find(target_name, unit_vectors):
     return similarities[:3]
 
 
-# --- 차트 생성 함수들 ---
 def create_combined_radar_chart(
     selected_name, selected_scores, results, categories
 ):
@@ -221,7 +220,6 @@ def create_combined_radar_chart(
         "rgb(16, 185, 129)",
     ]
 
-    # 1. 선택한 본인 데이터
     closed_selected_scores = list(selected_scores) + [selected_scores[0]]
     fig.add_trace(
         go.Scatterpolar(
@@ -235,7 +233,6 @@ def create_combined_radar_chart(
         )
     )
 
-    # 2. 유사한 친구 Top 3 데이터
     for i, (name, score, _, similar_scores) in enumerate(results):
         closed_similar_scores = list(similar_scores) + [similar_scores[0]]
         fig.add_trace(
@@ -363,28 +360,6 @@ if st.button("🔄 구글 시트 데이터 즉시 새로고침"):
     st.cache_data.clear()
     st.rerun()
 
-# ---------------------------------------------------------
-# ✨ [신규 기능 1] 알고리즘 / 수학적 원리 설명 버튼 (Expander)
-# ---------------------------------------------------------
-with st.expander("📐 **수학/알고리즘 원리 알아보기 (클릭)**"):
-    st.markdown(
-        """
-    #### 1. MBTI 성격의 5차원 벡터화
-    각 사람의 MBTI 5가지 척도(정신, 에너지, 본성, 전술, 자아) 비율 데이터를 5차원 공간상의 위치(벡터)인 $\vec{v} = (v_1, v_2, v_3, v_4, v_5)$ 로 나타냅니다.
-    
-    #### 2. 단위 벡터 정규화 ($L_2$ Norm)
-    성향의 절댓값 크기가 아닌 **'성향 비율의 방향성'**만을 비교하기 위해 각 벡터를 크기(길이) $1$인 단위 벡터 $\hat{u}$로 정규화합니다.
-    $$\hat{u} = \\frac{\vec{v}}{\|\vec{v}\|}$$
-    
-    #### 3. 벡터 내적(Dot Product)과 코사인 유사도
-    두 사람의 정규화된 성격 벡터 $\hat{u}_A$와 $\hat{u}_B$의 내적을 구하면, 이는 두 성향 벡터가 이루는 각도의 **코사인 유사도(Cosine Similarity)**가 됩니다.
-    $$\text{Similarity} = \hat{u}_A \cdot \hat{u}_B = \|\hat{u}_A\|\|\hat{u}_B\|\cos(\theta) = \cos(\theta)$$
-    
-    * 두 사람의 성향 패턴이 완전히 일치하면 $\theta = 0^\circ \rightarrow \mathbf{100\%}$
-    * 벡터가 이루는 각이 커질수록 유사도 점수가 낮아지게 됩니다.
-    """
-    )
-
 st.markdown("---")
 
 user_dict, unit_vectors = load_data_from_gsheets()
@@ -392,9 +367,34 @@ user_dict, unit_vectors = load_data_from_gsheets()
 if not unit_vectors:
     st.error("데이터를 불러오지 못했습니다. Google Sheets 연결을 확인해주세요.")
 else:
+    # 1. 사용자 이름 입력받기
     input_name = st.text_input(
         "당신의 이름을 입력해 주세요:", placeholder="예: 홍길동"
     ).strip()
+
+    # ---------------------------------------------------------
+    # 위치 이동: [인풋창 바로 아래] 알고리즘 원리 설명 (Expander)
+    # ---------------------------------------------------------
+    with st.expander("📐 **수학/알고리즘 원리 알아보기 (클릭)**"):
+        st.markdown(
+            """
+        #### 1. MBTI 성격의 5차원 벡터화
+        각 사람의 MBTI 5가지 척도(정신, 에너지, 본성, 전술, 자아) 비율 데이터를 5차원 공간상의 위치(벡터)인 $\vec{v} = (v_1, v_2, v_3, v_4, v_5)$ 로 나타냅니다.
+        
+        #### 2. 단위 벡터 정규화 ($L_2$ Normalization)
+        성향의 절댓값 크기가 아닌 **'성향 비율의 방향성'**만을 비교하기 위해 각 벡터를 크기(길이) $1$인 단위 벡터 $\hat{u}$로 정규화합니다.
+        $$\hat{u} = \\frac{\vec{v}}{\|\vec{v}\|}$$
+        
+        #### 3. 벡터 내적(Dot Product)과 코사인 유사도
+        두 사람의 정규화된 성격 벡터 $\hat{u}_A$와 $\hat{u}_B$의 내적을 구하면, 이는 두 성향 벡터가 이루는 각도의 **코사인 유사도(Cosine Similarity)**가 됩니다.
+        $$\text{Similarity} = \hat{u}_A \cdot \hat{u}_B = \|\hat{u}_A\|\|\hat{u}_B\|\cos(\theta) = \cos(\theta)$$
+        
+        * 두 사람의 성향 패턴이 완전히 일치하면 $\theta = 0^\circ \rightarrow \mathbf{100\%}$
+        * 벡터가 이루는 각이 커질수록 유사도 점수가 낮아지게 됩니다.
+        """
+        )
+
+    st.write("")
 
     if input_name:
         results = find(input_name, unit_vectors)
@@ -402,10 +402,9 @@ else:
         if results:
             st.markdown(f"### 🔍 **{input_name}**님과 가장 잘 맞는 Top 3 친구들")
 
-            # --- 카드 3개 레이아웃 (포디움배치: 2위 | 1위(중앙/우뚝) | 3위) ---
+            # Top 3 카드 배치
             c_left, c_center, c_right = st.columns(3)
 
-            # 2위 카드 (왼쪽)
             if len(results) >= 2:
                 name, score, msg, _ = results[1]
                 with c_left:
@@ -421,7 +420,6 @@ else:
                         unsafe_allow_html=True,
                     )
 
-            # 1위 카드 (중앙)
             if len(results) >= 1:
                 name, score, msg, _ = results[0]
                 with c_center:
@@ -437,7 +435,6 @@ else:
                         unsafe_allow_html=True,
                     )
 
-            # 3위 카드 (오른쪽)
             if len(results) >= 3:
                 name, score, msg, _ = results[2]
                 with c_right:
@@ -456,7 +453,7 @@ else:
             st.write("")
             st.write("")
 
-            # Top 3 전체 비교 레이더 차트
+            # Top 3 오각형 비교 차트
             categories = ["정신", "에너지", "본성", "전술", "자아"]
             selected_user_scores = unit_vectors[input_name]["original_scores"]
 
@@ -466,36 +463,40 @@ else:
             st.plotly_chart(fig_combined, use_container_width=True)
 
             # ---------------------------------------------------------
-            # ✨ [신규 기능 2] 특정 친구 검색 및 1:1 비교
+            # 2. 1:1 비교 전용 섹션 (+ 독립된 버튼 적용)
             # ---------------------------------------------------------
             st.markdown("---")
             st.markdown("### 🎯 **특정 친구와 1:1 비교 분석하기**")
 
-            # 내 이름을 제외한 나머지 친구 목록 추출
             other_friends = [
                 name for name in unit_vectors.keys() if name != input_name
             ]
 
             if other_friends:
-                target_friend = st.selectbox(
-                    "궁금한 친구의 이름을 선택하세요:",
-                    options=other_friends,
-                    index=0,
-                )
+                col_sel, col_btn = st.columns([3, 1])
 
-                if target_friend:
-                    # 선택한 친구와의 내적 유사도 계산
+                with col_sel:
+                    target_friend = st.selectbox(
+                        "궁금한 친구의 이름을 선택하세요:",
+                        options=other_friends,
+                        index=0,
+                    )
+
+                with col_btn:
+                    st.write("")  # 레이아웃 높이 맞춤용 여백
+                    st.write("")
+                    btn_pair = st.button("🎯 1:1 비교 분석하기", use_container_width=True)
+
+                # 버튼 클릭 시 1:1 비교 분석 실행
+                if btn_pair:
                     vec1 = unit_vectors[input_name]["vector"]
                     vec2 = unit_vectors[target_friend]["vector"]
                     pair_score = float(np.dot(vec1, vec2)) * 100
 
                     scores1 = unit_vectors[input_name]["original_scores"]
                     scores2 = unit_vectors[target_friend]["original_scores"]
-
-                    # 지목된 친구의 한마디 메시지 가져오기
                     friend_msg = unit_vectors[target_friend]["msg"]
 
-                    # 결과 출력
                     col_info1, col_info2 = st.columns([1, 2])
 
                     with col_info1:
