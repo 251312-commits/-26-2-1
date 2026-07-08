@@ -130,12 +130,12 @@ def load_data_from_gsheets():
             row["선택"],  # 만약 'MBTI' 문자를 넣고 싶다면 row['MBTI']로 변경
             (
                 row["정신"] / 100
-                if str(row["MBTI"])[0].lower() == "i"
+                if str(row["MBTI"])[0].lower() == "n"
                 else 1 - row["정신"] / 100
             ),
             (
                 row["에너지"] / 100
-                if str(row["MBTI"])[1].lower() == "n"
+                if str(row["MBTI"])[1].lower() == "i"
                 else 1 - row["에너지"] / 100
             ),
             (
