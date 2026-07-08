@@ -145,7 +145,7 @@ else:
         results = find(selected_name, unit_vectors)
 
         if isinstance(results, list) and results:
-            col1, col2 = st.columns(2)
+            col1, col2 = st.columns([2,3])
             
             with col1:
                 st.subheader("가장 유사한 친구들")
