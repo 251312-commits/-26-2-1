@@ -215,3 +215,172 @@ def create_combined_radar_chart(
         "rgba(59, 130, 246, 0.35)",  # 2위 (파랑)
         "rgba(16, 185, 129, 0.35)",  # 3위 (초록)
     ]
+    line_colors = [
+        "rgb(255, 99, 132)",
+        "rgb(99, 102, 241)",
+        "rgb(59, 130, 246)",
+        "rgb(16, 185, 129)",
+    ]
+
+    # 1. 선택한 본인 데이터
+    closed_selected_scores = list(selected_scores) + [selected_scores[0]]
+    fig.add_trace(
+        go.Scatterpolar(
+            r=closed_selected_scores,
+            theta=closed_categories,
+            fill="toself",
+            name=f"★ {selected_name} (나)",
+            fillcolor=fill_colors[0],
+            line=dict(color=line_colors[0], width=3),
+            opacity=0.9,
+        )
+    )
+
+    # 2. 유사한 친구 Top 3 데이터
+    for i, (name, score, _, similar_scores) in enumerate(results):
+        closed_similar_scores = list(similar_scores) + [similar_scores[0]]
+        fig.add_trace(
+            go.Scatterpolar(
+                r=closed_similar_scores,
+                theta=closed_categories,
+                fill="toself",
+                name=f"{i+1}위: {name} ({score*100:.1f}%)",
+                fillcolor=fill_colors[i+1],
+                line=dict(color=line_colors[i+1], width=2),
+                opacity=0.75,
+            )
+        )
+
+    # 3. 다크 모드 전용 레이아웃 설정
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#E2E8F0", size=13),
+        polar=dict(
+            bgcolor="rgba(255,255,255,0.02)",
+            radialaxis=dict(
+                visible=True,
+                range=[0, 1],
+                gridcolor="rgba(255, 255, 255, 0.15)",
+                linecolor="rgba(255, 255, 255, 0.2)",
+                tickfont=dict(color="#9CA3AF"),
+            ),
+            angularaxis=dict(
+                gridcolor="rgba(255, 255, 255, 0.15)",
+                linecolor="rgba(255, 255, 255, 0.2)",
+                tickfont=dict(color="#F3F4F6"),
+            ),
+        ),
+        showlegend=True,
+        legend=dict(
+            itemclick="toggle",
+            itemdoubleclick="toggleothers",
+            font=dict(color="#E2E8F0"),
+        ),
+        title=dict(
+            text=f"📊 {selected_name}님과 상위 3명의 MBTI 오각형 비교",
+            font=dict(color="#FFFFFF", size=16),
+        ),
+        height=520,
+    )
+    return fig
+
+
+# --- App Main UI ---
+st.title("성격 유사도 분석")
+st.subheader("벡터를 이용해 Python으로 우리 학교 학생들의 MBTI 기반 성격 유사도 분석")
+
+# 🔄 새로고침 버튼 (클릭 시 캐시를 비우고 앱 재실행)
+if st.button("🔄 구글 시트 데이터 즉시 새로고침"):
+    st.cache_data.clear()
+    st.rerun()
+st.markdown("---")
+
+user_dict, unit_vectors = load_data_from_gsheets()
+
+if not unit_vectors:
+    st.error("데이터를 불러오지 못했습니다. Google Sheets 연결을 확인해주세요.")
+else:
+    # 사용자 이름 입력받기 (st.text_input)
+    input_name = st.text_input(
+        "당신의 이름을 입력해 주세요:", placeholder="예: 홍길동"
+    ).strip()
+
+    if input_name:
+        results = find(input_name, unit_vectors)
+
+        if results:
+            st.markdown(f"### 🔍 **{input_name}**님과 가장 잘 맞는 친구들")
+
+            # --- 카드 3개 레이아웃 (포디움배치: 2위 | 1위(중앙/우뚝) | 3위) ---
+            c_left, c_center, c_right = st.columns(3)
+
+            # 2위 카드 (왼쪽)
+            if len(results) >= 2:
+                name, score, msg, _ = results[1]
+                with c_left:
+                    st.markdown(
+                        f"""
+                        <div class="friend-card">
+                            <span class="badge badge-2">🥈 2위</span>
+                            <div class="friend-name">{name}</div>
+                            <div class="similarity-score">{score*100:.2f}%</div>
+                            <div class="message-box">"{msg}"</div>
+                        </div>
+                    """,
+                        unsafe_allow_html=True,
+                    )
+
+            # 1위 카드 (중앙 - 우뚝 솟음)
+            if len(results) >= 1:
+                name, score, msg, _ = results[0]
+                with c_center:
+                    st.markdown(
+                        f"""
+                        <div class="friend-card-center">
+                            <span class="badge badge-1">👑 1위 (최고의 궁합)</span>
+                            <div class="friend-name">{name}</div>
+                            <div class="similarity-score">{score*100:.2f}%</div>
+                            <div class="message-box">"{msg}"</div>
+                        </div>
+                    """,
+                        unsafe_allow_html=True,
+                    )
+
+            # 3위 카드 (오른쪽)
+            if len(results) >= 3:
+                name, score, msg, _ = results[2]
+                with c_right:
+                    st.markdown(
+                        f"""
+                        <div class="friend-card">
+                            <span class="badge badge-3">🥉 3위</span>
+                            <div class="friend-name">{name}</div>
+                            <div class="similarity-score">{score*100:.2f}%</div>
+                            <div class="message-box">"{msg}"</div>
+                        </div>
+                    """,
+                        unsafe_allow_html=True,
+                    )
+
+            st.write("")
+            st.write("")
+
+            # --- 레이더 차트 분석 ---
+            categories = ["정신", "에너지", "본성", "전술", "자아"]
+            selected_user_scores = unit_vectors[input_name]["original_scores"]
+
+            fig_combined = create_combined_radar_chart(
+                input_name, selected_user_scores, results, categories
+            )
+
+            st.plotly_chart(fig_combined, use_container_width=True)
+
+        else:
+            st.warning(
+                f"'{input_name}' 님의 데이터가 존재하지 않습니다. 정확한 이름으로 다시 검색해보세요!"
+            )
+    else:
+        st.info(
+            "👆 위 입력창에 본인의 이름을 입력하면 유사도 분석 결과를 확인하실 수 있습니다."
+        )
