@@ -372,8 +372,14 @@ else:
         "당신의 이름을 입력해 주세요:", placeholder="예: 홍길동"
     ).strip()
 
+    if not input_name:
+        # 이름 입력 전 초기 안내문
+        st.info(
+            "👆 위 입력창에 본인의 이름을 입력하면 유사도 분석 결과를 확인하실 수 있습니다."
+        )
+
     # ---------------------------------------------------------
-    # 위치 이동: [인풋창 바로 아래] 알고리즘 원리 설명 (Expander)
+    # 위치 이동: [설명창(st.info) 밑으로 이동한 원리 설명 Expander]
     # ---------------------------------------------------------
     with st.expander("📐 **수학/알고리즘 원리 알아보기 (클릭)**"):
         st.markdown(
@@ -463,32 +469,38 @@ else:
             st.plotly_chart(fig_combined, use_container_width=True)
 
             # ---------------------------------------------------------
-            # 2. 1:1 비교 전용 섹션 (+ 독립된 버튼 적용)
+            # 2. 1:1 비교 전용 섹션 (텍스트 입력 방식 + 분석 버튼)
             # ---------------------------------------------------------
             st.markdown("---")
             st.markdown("### 🎯 **특정 친구와 1:1 비교 분석하기**")
 
-            other_friends = [
-                name for name in unit_vectors.keys() if name != input_name
-            ]
+            col_sel, col_btn = st.columns([3, 1])
 
-            if other_friends:
-                col_sel, col_btn = st.columns([3, 1])
+            with col_sel:
+                # 텍스트 입력창으로 변경
+                target_friend = st.text_input(
+                    "비교하고 싶은 친구의 이름을 입력해 주세요:",
+                    placeholder="예: 김철수",
+                    key="target_friend_input",
+                ).strip()
 
-                with col_sel:
-                    target_friend = st.selectbox(
-                        "궁금한 친구의 이름을 선택하세요:",
-                        options=other_friends,
-                        index=0,
+            with col_btn:
+                st.write("")  # 높이 맞춤 여백
+                st.write("")
+                btn_pair = st.button("🎯 1:1 비교 분석하기", use_container_width=True)
+
+            # 버튼을 누르거나 이름을 입력했을 때 처리
+            if btn_pair:
+                if not target_friend:
+                    st.warning("비교할 친구의 이름을 입력해 주세요!")
+                elif target_friend == input_name:
+                    st.warning("본인 이름 외에 다른 친구의 이름을 입력해 주세요!")
+                elif target_friend not in unit_vectors:
+                    st.error(
+                        f"'{target_friend}' 님의 데이터가 존재하지 않습니다. 정확한 이름으로 입력해주세요."
                     )
-
-                with col_btn:
-                    st.write("")  # 레이아웃 높이 맞춤용 여백
-                    st.write("")
-                    btn_pair = st.button("🎯 1:1 비교 분석하기", use_container_width=True)
-
-                # 버튼 클릭 시 1:1 비교 분석 실행
-                if btn_pair:
+                else:
+                    # 데이터가 정상적으로 존재할 경우 계산 및 출력
                     vec1 = unit_vectors[input_name]["vector"]
                     vec2 = unit_vectors[target_friend]["vector"]
                     pair_score = float(np.dot(vec1, vec2)) * 100
@@ -530,7 +542,3 @@ else:
             st.warning(
                 f"'{input_name}' 님의 데이터가 존재하지 않습니다. 정확한 이름으로 다시 검색해보세요!"
             )
-    else:
-        st.info(
-            "👆 위 입력창에 본인의 이름을 입력하면 유사도 분석 결과를 확인하실 수 있습니다."
-        )
