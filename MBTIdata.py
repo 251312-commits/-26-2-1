@@ -361,7 +361,7 @@ def format_mbti_string(mbti_str):
 
 
 # --- App Main UI ---
-st.title("유영이가꼽둬서살기싫음")
+st.title("기하 발표 야~호☆")
 st.subheader("벡터를 이용해 Python으로 우리 학교 학생들의 MBTI 기반 성격 유사도 분석")
 
 if st.button("🔄 구글 시트 데이터 즉시 새로고침"):
